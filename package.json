@@ -10,6 +10,9 @@
     "web": "expo start --web",
     "test": "jest --watchAll"
   },
+  "scripts": {
+  "patch-font": "mkdir -p node_modules/expo-font/build && echo \"module.exports = require('expo-font');\" > node_modules/expo-font/build/Font.js"
+},
   "dependencies": {
     "@expo/vector-icons": "^13.0.0",
     "@react-navigation/native": "^6.0.2",
