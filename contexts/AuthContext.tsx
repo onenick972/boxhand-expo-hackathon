@@ -75,14 +75,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
-        .single();
+        .eq('id', userId) 
+        .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
         setUser(data);
         router.replace('/(tabs)');
+      }
+      else {
+        // No user profile found, sign out to trigger re-authentication
+        await supabase.auth.signOut();
+        router.replace('/(auth)');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
