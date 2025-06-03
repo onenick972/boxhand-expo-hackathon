@@ -1,0 +1,6 @@
+# Font Files
+
+Place the following Inter font files in this directory:
+- Inter-Regular.ttf
+- Inter-SemiBold.ttf
+- Inter-Bold.ttf
