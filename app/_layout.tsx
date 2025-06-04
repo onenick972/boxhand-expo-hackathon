@@ -14,6 +14,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useFrameworkReady();
+  const { session } = useAuth();
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': require('../assets/fonts/Inter-Regular.otf'),
@@ -38,8 +39,11 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          {!session ? (
+            <Stack.Screen name="(auth)\" options={{ animation: 'fade' }} />
+          ) : (
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          )}
           <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
         </Stack>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
