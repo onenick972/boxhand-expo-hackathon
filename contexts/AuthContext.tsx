@@ -103,7 +103,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data?.session) {
         setSession(data.session);
       }
+      
+      fetchUser(data?.user.id);
+      
       router.replace('/(tabs)');
+    
     } catch (error) {
       console.error('Sign in failed:', error);
       throw error;
