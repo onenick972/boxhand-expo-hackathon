@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 
 export default function SignInScreen() {
-  const { theme } = useTheme();
+  const { theme } = u  seTheme();
   const { signIn, isLoading } = useAuth();
   const router = useRouter();
   
@@ -23,7 +23,7 @@ export default function SignInScreen() {
     
     try {
       setError('');
-      await signIn(email, password);
+      await   (email, password);
     } catch (err) {
       setError('Invalid email or password');
     }
