@@ -93,20 +93,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: { session, user }, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
       
-      if (data?.session) {
-        setSession(data.session);
+      if (session && user) {
+        setSession(session);
+        await fetchUser(user.id);
       }
-      
-      fetchUser(data?.user.id);
-      router.replace('/(tabs)');
-    
     } catch (error) {
       console.error('Sign in failed:', error);
       throw error;
