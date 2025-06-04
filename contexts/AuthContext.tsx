@@ -102,7 +102,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (user) {
         // Fetch user profile after successful authentication
-        await fetchUser(user.id);
+       // await fetchUser(user.id);
+
+          
+        setUser(user);
+        // Ensure we're on the tabs layout after successful auth
+        router.replace('/(tabs)');
+      }
+      else {
+        // No user profile found, sign out to trigger re-authentication
+        await supabase.auth.signOut();
+        router.replace('/(auth)');
       }
     } catch (error) {
       console.error('Sign in failed:', error);
