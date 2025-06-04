@@ -103,8 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         // Fetch user profile after successful authentication
        // await fetchUser(user.id);
-
-          
+ 
         setUser(user);
         // Ensure we're on the tabs layout after successful auth
         router.replace('/(tabs)');
