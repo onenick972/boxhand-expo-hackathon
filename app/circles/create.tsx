@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Info } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
+import { createCircle } from '@/lib/circles';
 
 // Frequency options
 const frequencyOptions = ['Weekly', 'Bi-weekly', 'Monthly'];
@@ -12,6 +14,7 @@ const frequencyOptions = ['Weekly', 'Bi-weekly', 'Monthly'];
 export default function CreateCircleScreen() {
   const { theme, isDark } = useTheme();
   const router = useRouter();
+  const { user } = useAuth();
   
   // Form state
   const [circleName, setCircleName] = useState('');
@@ -20,17 +23,43 @@ export default function CreateCircleScreen() {
   const [frequency, setFrequency] = useState('Monthly');
   const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
   const [memberEmails, setMemberEmails] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState('');
   
   // Form validation
   const isFormValid = circleName && contributionAmount && memberEmails;
   
-  // Handle form submission
-  const handleCreateCircle = () => {
-    // In a real app, this would connect to the blockchain to create a new circle
-    // and invite members via email
-    
-    // For this demo, we'll just navigate back to the circles screen
-    router.replace('/circles');
+  const handleCreateCircle = async () => {
+    if (!user?.walletAddress) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    setError('');
+    setIsCreating(true);
+
+    try {
+      // Parse member emails
+      const emails = memberEmails
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email);
+
+      await createCircle(
+        circleName,
+        description,
+        parseInt(contributionAmount),
+        frequency,
+        emails
+      );
+
+      router.replace('/circles');
+    } catch (error) {
+      setError('Failed to create circle. Please try again.');
+      console.error('Create circle error:', error);
+    } finally {
+      setIsCreating(false);
+    }
   };
   
   return (
@@ -210,13 +239,21 @@ export default function CreateCircleScreen() {
               style={[
                 styles.createButton,
                 { backgroundColor: theme.primary },
-                !isFormValid && { opacity: 0.7 }
+                (!isFormValid || isCreating) && { opacity: 0.7 }
               ]}
               onPress={handleCreateCircle}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isCreating}
             >
-              <Text style={styles.createButtonText}>Create Circle</Text>
+              {isCreating ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.createButtonText}>Create Circle</Text>
+              )}
             </Pressable>
+            
+            {error ? (
+              <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+            ) : null}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -364,5 +401,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: 'white',
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });
