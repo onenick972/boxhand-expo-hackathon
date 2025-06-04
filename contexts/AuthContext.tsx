@@ -78,10 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         setUser(data);
         router.replace('/(tabs)');
-      }
-      // Navigate to tabs after successful user fetch
-      else {
-        // No user profile found, sign out to trigger re-authentication
+      } else {
+        // No user profile found, sign out to trigger re-authentication 
         await supabase.auth.signOut();
         router.replace('/(auth)');
       }
