@@ -10,29 +10,49 @@ export default function SignUpScreen() {
   const { theme } = useTheme();
   const { signUp, isLoading } = useAuth();
   const router = useRouter();
-  
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  
+
   const handleSignUp = async () => {
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Password strength validation
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
     try {
       setError('');
       await signUp(email, password, name);
+      // After successful registration, user will be automatically redirected to tabs
+      // due to the auth state change handler in AuthContext
     } catch (err) {
-      setError('Failed to create account');
+      const error = err as Error;
+      if (error.message.includes('email')) {
+        setError('This email is already registered');
+      } else {
+        setError('Failed to create account. Please try again.');
+      }
     }
   };
   
