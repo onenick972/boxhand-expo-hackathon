@@ -49,11 +49,9 @@ function RootLayoutNav({ colorScheme }: { colorScheme: string | null }) {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen 
-          name={session ? "(tabs)" : "(auth)"}
-          options={{ animation: 'fade' }}
-          redirect={!session}
-        />
+        <Stack.Screen name="index" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
