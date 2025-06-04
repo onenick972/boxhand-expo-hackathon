@@ -41,7 +41,7 @@ export default function RootLayout() {
       <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
           {!session ? (
-            <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+            <Stack.Screen name="(auth)\" options={{ animation: 'fade' }} />
           ) : (
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           )}
