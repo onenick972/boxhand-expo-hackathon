@@ -54,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       if (session?.user) {
         fetchUser(session.user.id).then(() => {
-          router.replace('/(tabs)');
         });
       } else {
         setUser(null);
@@ -77,9 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setUser(data);
-        if (session) {
-          router.replace('/(tabs)');
-        }
       }
       else {
         // No user profile found, sign out to trigger re-authentication
@@ -105,7 +101,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data?.session) {
         setSession(data.session);
-        await fetchUser(data.session.user.id);
       }
     } catch (error) {
       console.error('Sign in failed:', error);
