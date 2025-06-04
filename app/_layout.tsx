@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SplashScreen } from 'expo-router';
@@ -16,10 +16,10 @@ export default function RootLayout() {
   useFrameworkReady();
 
   const [fontsLoaded, fontError] = useFonts({
-    'Inter-Regular': require('../assets/fonts/Inter-Regular.otf'),
-    'Inter-Medium': require('../assets/fonts/Inter-Regular.otf'),
-    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.otf'),
-    'Inter-Bold': require('../assets/fonts/Inter-Bold.otf'),
+    'Inter-Regular': require('@/assets/fonts/Inter-Regular.otf'),
+    'Inter-Medium': require('@/assets/fonts/Inter-Regular.otf'),
+    'Inter-SemiBold': require('@/assets/fonts/Inter-SemiBold.otf'),
+    'Inter-Bold': require('@/assets/fonts/Inter-Bold.otf'),
   });
 
   useEffect(() => {
@@ -49,11 +49,11 @@ function RootLayoutNav({ colorScheme }: { colorScheme: string | null }) {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        {!session ? (
-          <Stack.Screen name="(auth)\" options={{ animation: 'fade' }} />
-        ) : (
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-        )}
+        <Stack.Screen 
+          name={session ? "(tabs)" : "(auth)"}
+          options={{ animation: 'fade' }}
+          redirect={!session}
+        />
         <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
