@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SplashScreen } from 'expo-router';
@@ -15,7 +14,6 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useFrameworkReady();
-  const { session } = useAuth();
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': require('../assets/fonts/Inter-Regular.otf'),
@@ -39,16 +37,26 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          {!session ? (
-            <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-          ) : (
-            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-          )}
-          <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
-        </Stack>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <RootLayoutNav colorScheme={colorScheme} />
       </AuthProvider>
     </ThemeProvider>
+  );
+}
+
+function RootLayoutNav({ colorScheme }: { colorScheme: string | null }) {
+  const { session } = useAuth();
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        {!session ? (
+          <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+        ) : (
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+        )}
+        <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
+      </Stack>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+    </>
   );
 }
