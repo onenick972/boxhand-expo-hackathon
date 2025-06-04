@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Home, UsersRound, WalletCards, PieChart, Settings } from 'lucide-react-native';
+import { Chrome as Home, UsersRound, WalletCards, ChartPie as PieChart, Settings } from 'lucide-react-native';
 
 export default function TabLayout() {
   const { theme, isDark } = useTheme();
