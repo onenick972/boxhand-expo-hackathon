@@ -93,25 +93,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+      const { data: { session }, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
       
-      if (user) {
-        // Fetch user profile after successful authentication
-       // await fetchUser(user.id);
- 
-        setUser(user);
-        // Ensure we're on the tabs layout after successful auth
-        router.replace('/(tabs)');
-      }
-      else {
-        // No user profile found, sign out to trigger re-authentication
-        await supabase.auth.signOut();
-        router.replace('/(auth)');
+      if (session) {
+        setSession(session);
+        await fetchUser(session.user.id);
       }
     } catch (error) {
       console.error('Sign in failed:', error);
