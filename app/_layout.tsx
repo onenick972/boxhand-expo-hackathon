@@ -9,27 +9,13 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { useColorScheme } from 'react-native';
 import { useFonts } from 'expo-font';
 
-// Prevent the splash screen from auto-hiding
+// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
-
-function RootLayoutNav() {
-  const { session } = useAuth();
-  
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {!session ? (
-        <Stack.Screen name="(auth)\" options={{ animation: 'fade' }} />
-      ) : (
-        <Stack.Screen name="(tabs)\" options={{ animation: 'fade' }} />
-      )}
-      <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
-    </Stack>
-  );
-}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useFrameworkReady();
+  const { session } = useAuth();
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': require('../assets/fonts/Inter-Regular.otf'),
@@ -53,7 +39,14 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <Stack screenOptions={{ headerShown: false }}>
+          {!session ? (
+            <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+          ) : (
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          )}
+          <Stack.Screen name="+not-found" options={{ presentation: 'modal' }} />
+        </Stack>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       </AuthProvider>
     </ThemeProvider>
