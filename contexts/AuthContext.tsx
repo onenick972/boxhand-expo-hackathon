@@ -82,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setUser(data);
+        // Ensure we're on the tabs layout after successful auth
         router.replace('/(tabs)');
       }
       else {
@@ -99,12 +100,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+      
+      if (user) {
+        // Fetch user profile after successful authentication
+        await fetchUser(user.id);
+      }
     } catch (error) {
       console.error('Sign in failed:', error);
       throw error;
@@ -148,8 +154,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setIsLoading(true);
     try {
+      setUser(null);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      router.replace('/(auth)');
     } catch (error) {
       console.error('Sign out failed:', error);
     } finally {
