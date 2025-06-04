@@ -16,10 +16,10 @@ export default function RootLayout() {
   useFrameworkReady();
 
   const [fontsLoaded, fontError] = useFonts({
-    'Outfit-Regular': require('../assets/fonts/Inter-Regular.otf'),
-    'Outfit-Medium': require('../assets/fonts/Inter-Regular.otf'),
-    'Outfit-SemiBold': require('../assets/fonts/Inter-SemiBold.otf'),
-    'Outfit-Bold': require('../assets/fonts/Inter-Bold.otf'),
+    'Inter-Regular': require('../assets/fonts/Inter-Regular.otf'),
+    'Inter-Medium': require('../assets/fonts/Inter-Regular.otf'),
+    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.otf'),
+    'Inter-Bold': require('../assets/fonts/Inter-Bold.otf'),
   });
 
   useEffect(() => {
