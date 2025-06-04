@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         fetchUser(session.user.id);
       } else {
-        setIsLoading(false);
+        setIsLoading(false); 
         router.replace('/(auth)');
       }
     });
@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
+        setIsLoading(true);
         fetchUser(session.user.id).then(() => {
         });
       } else {
@@ -77,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         setUser(data);
       }
+      // Navigate to tabs after successful user fetch
+      router.replace('/(tabs)');
       else {
         // No user profile found, sign out to trigger re-authentication
         await supabase.auth.signOut();
@@ -102,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data?.session) {
         setSession(data.session);
       }
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('Sign in failed:', error);
       throw error;
