@@ -105,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       fetchUser(data?.user.id);
-      
       router.replace('/(tabs)');
     
     } catch (error) {
