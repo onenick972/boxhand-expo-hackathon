@@ -40,13 +40,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data }) => {
+      const { session } = data;
       setSession(session);
       if (session?.user) {
         fetchUser(session.user.id);
       } else {
         setIsLoading(false);
-        router.replace('/(auth)');
+        router.replace('/(auth)/sign-in');
       }
     });
 
@@ -54,9 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       if (session?.user) {
         fetchUser(session.user.id);
+        router.replace('/(tabs)');
       } else {
         setUser(null);
-        router.replace('/(auth)');
+        router.replace('/(auth)/sign-in');
       }
     });
 
@@ -75,13 +77,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setUser(data);
-        // Ensure we're on the tabs layout after successful auth
-        router.replace('/(tabs)');
       }
       else {
         // No user profile found, sign out to trigger re-authentication
         await supabase.auth.signOut();
-        router.replace('/(auth)');
+        router.replace('/(auth)/sign-in');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -93,16 +93,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data: { session }, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
       
-      if (session) {
-        setSession(session);
-        await fetchUser(session.user.id);
+      if (data?.session) {
+        setSession(data.session);
+        await fetchUser(data.session.user.id);
+        router.replace('/(tabs)');
       }
     } catch (error) {
       console.error('Sign in failed:', error);
