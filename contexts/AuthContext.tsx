@@ -40,25 +40,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const { session } = data;
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
         fetchUser(session.user.id);
       } else {
         setIsLoading(false);
-        router.replace('/(auth)/sign-in');
+        router.replace('/(auth)');
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
-        fetchUser(session.user.id);
-        router.replace('/(tabs)');
+        fetchUser(session.user.id).then(() => {
+          router.replace('/(tabs)');
+        });
       } else {
         setUser(null);
-        router.replace('/(auth)/sign-in');
+        router.replace('/(auth)');
       }
     });
 
@@ -77,11 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setUser(data);
+        if (session) {
+          router.replace('/(tabs)');
+        }
       }
       else {
         // No user profile found, sign out to trigger re-authentication
         await supabase.auth.signOut();
-        router.replace('/(auth)/sign-in');
+        router.replace('/(auth)');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -103,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data?.session) {
         setSession(data.session);
         await fetchUser(data.session.user.id);
-        router.replace('/(tabs)');
       }
     } catch (error) {
       console.error('Sign in failed:', error);
@@ -151,6 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      setSession(null);
       router.replace('/(auth)');
     } catch (error) {
       console.error('Sign out failed:', error);
