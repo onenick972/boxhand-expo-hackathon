@@ -10,20 +10,20 @@ export default function SignInScreen() {
   const { theme } = u  seTheme();
   const { signIn, isLoading } = useAuth();
   const router = useRouter();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
+
   const handleSignIn = async () => {
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     try {
       setError('');
-      await   (email, password);
+      await signIn(email, password);
     } catch (err) {
       setError('Invalid email or password');
     }
