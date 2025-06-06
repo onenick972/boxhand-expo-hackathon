@@ -1,4 +1,5 @@
 import algosdk from 'algosdk';
+import { Buffer } from 'buffer';
 
 // Initialize Algorand client
 const algodClient = new algosdk.Algodv2(
@@ -13,9 +14,15 @@ export type WalletType = 'pera' | 'myalgo';
 // Connect to wallet and return address
 export async function connectWallet(type: WalletType): Promise<string> {
   try {
-    // For demo purposes, we'll return a mock address
-    // In production, implement actual wallet connection logic
-    const mockAddress = `ALGO${Math.random().toString(36).substring(2, 15)}`;
+    // Generate a valid mock Algorand address for demo purposes
+    // In production, this would be replaced with actual wallet connection logic
+    const mockAccount = algosdk.generateAccount();
+    const mockAddress = mockAccount.addr;
+    
+    // Verify the address is valid before returning
+    if (!isValidAlgorandAddress(mockAddress))
+      throw new Error('Generated invalid address');
+    
     return mockAddress;
   } catch (error) {
     console.error('Failed to connect wallet:', error);
