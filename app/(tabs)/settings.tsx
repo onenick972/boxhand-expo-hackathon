@@ -19,6 +19,15 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   
+  const handleConnectWallet = async () => {
+    try {
+      const address = await connectWallet('pera');
+      await connectWallet(address);
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
+  
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -106,8 +115,10 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Account & Security</Text>
             
             <SettingItem 
-              icon={<User size={20} color={theme.text} />}
-              title="Account Information"
+              icon={<WalletCards size={20} color={theme.text} />}
+              title="Connect Wallet"
+              rightText={user?.walletAddress ? 'Connected' : 'Not Connected'}
+              onPress={handleConnectWallet}
               showChevron
               theme={theme}
             />
@@ -164,6 +175,7 @@ interface SettingItemProps {
   icon: React.ReactNode;
   title: string;
   rightElement?: React.ReactNode;
+  onPress?: () => void;
   rightText?: string;
   showChevron?: boolean;
   theme: any;
@@ -173,12 +185,16 @@ const SettingItem: React.FC<SettingItemProps> = ({
   icon, 
   title, 
   rightElement, 
+  onPress,
   rightText, 
   showChevron = false,
   theme 
 }) => {
   return (
-    <Pressable style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+    <Pressable 
+      style={[styles.settingItem, { borderBottomColor: theme.border }]}
+      onPress={onPress}
+    >
       <View style={styles.settingLeft}>
         {icon}
         <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
