@@ -1,5 +1,5 @@
 import algosdk from 'algosdk';
-import { Buffer } from 'buffer';
+import { supabase } from './supabase';
 
 // Initialize Algorand client
 const algodClient = new algosdk.Algodv2(
@@ -11,24 +11,39 @@ const algodClient = new algosdk.Algodv2(
 // Wallet connection types
 export type WalletType = 'pera' | 'myalgo';
 
+// Connect wallet and update user profile
 // Connect to wallet and return address
 export async function connectWallet(type: WalletType): Promise<string> {
   try {
-    // Generate a valid mock Algorand address for demo purposes
-    // In production, this would be replaced with actual wallet connection logic
-    const mockAccount = algosdk.generateAccount();
-    const mockAddress = mockAccount.addr;
+    let walletAddress: string;
     
-    // Verify the address is valid before returning
-    if (!isValidAlgorandAddress(mockAddress))
-      throw new Error('Generated invalid address');
+    if (type === 'pera') {
+      // In production, integrate with PeraWallet SDK
+      const mockAccount = algosdk.generateAccount();
+      walletAddress = mockAccount.addr;
+    } else {
+      // In production, integrate with MyAlgo SDK
+      const mockAccount = algosdk.generateAccount();
+      walletAddress = mockAccount.addr;
+    }
     
-    return mockAddress;
+    // Verify address is valid
+    if (!isValidAlgorandAddress(walletAddress)) {
+      throw new Error('Invalid wallet address');
+    }
+    
+    // Update user profile with wallet address
+    const { error } = await supabase.auth.updateUser({
+      data: { wallet_address: walletAddress }
+    });
+
+    if (error) throw error;
+    
+    return walletAddress;
   } catch (error) {
     console.error('Failed to connect wallet:', error);
     throw error;
   }
-}
 
 export async function deployCircleContract(
   name: string,
