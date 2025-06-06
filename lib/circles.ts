@@ -19,6 +19,7 @@ export async function createCircle(
           contribution_amount: contributionAmount,
           frequency,
           total_pool: 0,
+          created_by: (await supabase.auth.getUser()).data.user?.id,
         }
       ])
       .select()
