@@ -44,6 +44,7 @@ export async function connectWallet(type: WalletType): Promise<string> {
     console.error('Failed to connect wallet:', error);
     throw error;
   }
+}
 
 export async function deployCircleContract(
   name: string,
