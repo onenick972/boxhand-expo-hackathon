@@ -39,23 +39,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Handle initial session check
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        fetchUser(session.user.id);
+        fetchUser(session.user.id).then(() => {
+          router.replace('/(tabs)');
+        });
       } else {
         setIsLoading(false); 
         router.replace('/(auth)');
       }
     });
 
+    // Handle auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
         setIsLoading(true);
-        fetchUser(session.user.id).then(() => {
-        });
+        fetchUser(session.user.id);
       } else {
         setUser(null);
         router.replace('/(auth)');
@@ -65,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUser = async (userId: string) => {
+  const fetchUser = async (userId: string): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -77,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setUser(data);
-        router.replace('/(tabs)');
       } else {
         // No user profile found, sign out to trigger re-authentication 
         await supabase.auth.signOut();
@@ -102,7 +104,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session && user) {
         setSession(session);
-        await fetchUser(user.id);
+        await fetchUser(user.id).then(() => {
+          router.replace('/(tabs)');
+        });
       }
     } catch (error) {
       console.error('Sign in failed:', error);
