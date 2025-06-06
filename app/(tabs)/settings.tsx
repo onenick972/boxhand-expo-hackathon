@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Switch } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight } from 'lucide-react-native';
+import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, Wallet as WalletCards } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 
 export default function SettingsScreen() {
