@@ -8,8 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build:web": "expo build:web",
     "test": "jest --watchAll",
-      "patch-font": "mkdir -p node_modules/expo-font/build && echo \"module.exports = require('expo-font');\" > node_modules/expo-font/build/Font.js"
+    "patch-font": "mkdir -p node_modules/expo-font/build && echo \"module.exports = require('expo-font');\" > node_modules/expo-font/build/Font.js"
 
   },
  
