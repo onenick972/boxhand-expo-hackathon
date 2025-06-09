@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { BlurView } from 'expo-blur';
-import { ArrowUpRight, ArrowDownRight, Wallet, ArrowDownLeft, Plus, LinkIcon, Shield, Zap, Users } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownRight, Wallet, ArrowDownLeft, Plus, Link as LinkIcon, Shield, Zap, Users } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import TransactionList from '@/components/TransactionList';
 import { connectWallet } from '@/lib/algorand';
