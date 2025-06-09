@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Switch,Alert  } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { connectWallet as connectAlgorandWallet, isValidAlgorandAddress } from '@/lib/algorand';
+import { connectWallet } from '@/lib/algorand';
 import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight ,WalletCards} from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 
@@ -13,24 +13,26 @@ export default function SettingsScreen() {
   
   const handleConnectWallet = async () => {
     try {
-      // Get wallet address from Algorand wallet
-      const walletAddress = await connectAlgorandWallet('pera');
+      setIsLoading(true);
+      const walletAddress = await connectWallet('pera');
+
       
-      // Validate the address
-      if (!isValidAlgorandAddress(walletAddress)) {
-        throw new Error('Invalid wallet address');
+      // Update local state
+      if (user) {
+        setUser({ ...user, walletAddress });
       }
-      
+     
       // Update user profile with wallet address
       await updateWallet(walletAddress);
-      
+
     } catch (error) {
       console.error('Failed to connect wallet:', error);
-      // Show error message to user
       Alert.alert(
         'Wallet Connection Failed',
         'Unable to connect your wallet. Please try again.'
       );
+    } finally {
+      setIsLoading(false);
     }
   };
   
