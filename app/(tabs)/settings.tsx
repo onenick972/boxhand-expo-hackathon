@@ -3,18 +3,18 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Switch,Alert  } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { connectWallet, isValidAlgorandAddress } from '@/lib/algorand';
+import { connectWallet as connectAlgorandWallet, isValidAlgorandAddress } from '@/lib/algorand';
 import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight ,WalletCards} from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, connectWallet: updateWallet } = useAuth();
   
   const handleConnectWallet = async () => {
     try {
       // Get wallet address from Algorand wallet
-      const walletAddress = await connectWallet('pera');
+      const walletAddress = await connectAlgorandWallet('pera');
       
       // Validate the address
       if (!isValidAlgorandAddress(walletAddress)) {
@@ -22,7 +22,7 @@ export default function SettingsScreen() {
       }
       
       // Update user profile with wallet address
-      await connectWallet(walletAddress);
+      await updateWallet(walletAddress);
       
     } catch (error) {
       console.error('Failed to connect wallet:', error);
