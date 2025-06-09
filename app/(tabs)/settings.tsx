@@ -9,18 +9,22 @@ import { BlurView } from 'expo-blur';
 
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, connectWallet: updateWallet } = useAuth();
   
   const handleConnectWallet = async () => {
     try {
       setIsLoading(true);
       const walletAddress = await connectWallet('pera');
+
       
       // Update local state
       if (user) {
         setUser({ ...user, walletAddress });
       }
-      
+     
+      // Update user profile with wallet address
+      await updateWallet(walletAddress);
+
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       Alert.alert(
