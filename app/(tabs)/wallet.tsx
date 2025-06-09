@@ -1,22 +1,153 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { BlurView } from 'expo-blur';
-import { ArrowUpRight, ArrowDownRight, Wallet, ArrowDownLeft, Plus, LinkIcon } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ArrowUpRight, ArrowDownRight, Wallet, ArrowDownLeft, Plus, LinkIcon, Shield, Zap, Users } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import TransactionList from '@/components/TransactionList';
+import { connectWallet } from '@/lib/algorand';
 
-// Mock data
+// Mock data for connected wallet
 const mockBalance = 2450.75;
 const mockAlgoPrice = 1.35;
 
 export default function WalletScreen() {
   const { theme, isDark } = useTheme();
-  const { user } = useAuth();
-  const [connectedWallet, setConnectedWallet] = useState(user?.walletAddress || '');
+  const { user, connectWallet: updateUserWallet } = useAuth();
+  const [isConnecting, setIsConnecting] = useState(false);
 
+  const handleConnectWallet = async () => {
+    try {
+      setIsConnecting(true);
+      const walletAddress = await connectWallet('pera');
+      
+      // Update user context with wallet address
+      await updateUserWallet(walletAddress);
+      
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      Alert.alert(
+        'Wallet Connection Failed',
+        'Unable to connect your wallet. Please try again.'
+      );
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // Check if wallet is connected
+  const isWalletConnected = user?.walletAddress;
+
+  if (!isWalletConnected) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.header}>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>Wallet</Text>
+            </View>
+
+            {/* Hero Section */}
+            <Animated.View entering={FadeInUp.duration(800)} style={styles.heroSection}>
+              <View style={[styles.walletIconContainer, { backgroundColor: theme.primary + '20' }]}>
+                <Wallet size={64} color={theme.primary} />
+              </View>
+              
+              <Text style={[styles.heroTitle, { color: theme.text }]}>
+                Connect Your Algorand Wallet
+              </Text>
+              
+              <Text style={[styles.heroSubtitle, { color: theme.inactive }]}>
+                Securely link your Algorand wallet to participate in savings circles, 
+                make contributions, and manage your funds with complete transparency.
+              </Text>
+            </Animated.View>
+
+            {/* Features Section */}
+            <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.featuresSection}>
+              <FeatureCard
+                icon={<Shield size={24} color={theme.success} />}
+                title="Secure & Private"
+                description="Your wallet remains under your control. We never store your private keys."
+                theme={theme}
+                isDark={isDark}
+              />
+              
+              <FeatureCard
+                icon={<Zap size={24} color={theme.accent} />}
+                title="Fast Transactions"
+                description="Leverage Algorand's speed for instant contributions and payouts."
+                theme={theme}
+                isDark={isDark}
+              />
+              
+              <FeatureCard
+                icon={<Users size={24} color={theme.primary} />}
+                title="Circle Participation"
+                description="Join savings circles and build trust through consistent participation."
+                theme={theme}
+                isDark={isDark}
+              />
+            </Animated.View>
+
+            {/* Connect Button */}
+            <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.connectSection}>
+              <BlurView
+                intensity={80}
+                tint={isDark ? 'dark' : 'light'}
+                style={[styles.connectCard, { borderColor: theme.border }]}
+              >
+                <Text style={[styles.connectTitle, { color: theme.text }]}>
+                  Ready to get started?
+                </Text>
+                
+                <Text style={[styles.connectDescription, { color: theme.inactive }]}>
+                  Connect your Algorand wallet to unlock all features and start your savings journey.
+                </Text>
+                
+                <Pressable
+                  style={[
+                    styles.connectButton,
+                    { backgroundColor: theme.primary },
+                    isConnecting && { opacity: 0.7 }
+                  ]}
+                  onPress={handleConnectWallet}
+                  disabled={isConnecting}
+                >
+                  <Text style={styles.connectButtonText}>
+                    {isConnecting ? 'CONNECTING...' : 'CONNECT YOUR WALLET'}
+                  </Text>
+                </Pressable>
+                
+                <Text style={[styles.supportedWallets, { color: theme.inactive }]}>
+                  Supports Pera Wallet, MyAlgo, and other Algorand wallets
+                </Text>
+              </BlurView>
+            </Animated.View>
+
+            {/* Security Notice */}
+            <Animated.View entering={FadeInDown.delay(600).duration(600)} style={styles.securityNotice}>
+              <View style={styles.securityHeader}>
+                <Shield size={16} color={theme.success} />
+                <Text style={[styles.securityTitle, { color: theme.text }]}>
+                  Your Security Matters
+                </Text>
+              </View>
+              
+              <Text style={[styles.securityText, { color: theme.inactive }]}>
+                BoxHand uses industry-standard security practices. Your private keys never leave your device, 
+                and all transactions are signed locally in your wallet.
+              </Text>
+            </Animated.View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // Wallet is connected - show wallet information
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -69,53 +200,29 @@ export default function WalletScreen() {
             </BlurView>
           </Animated.View>
 
-          {/* Wallet Connection */}
-          {!connectedWallet ? (
-            <Animated.View entering={FadeInDown.delay(200).duration(600)}>
-              <BlurView
-                intensity={80}
-                tint={isDark ? 'dark' : 'light'}
-                style={[styles.connectCard, { borderColor: theme.border }]}
-              >
-                <Wallet size={40} color={theme.primary} />
-                <Text style={[styles.connectTitle, { color: theme.text }]}>
-                  Connect Your Algorand Wallet
+          {/* Connected Wallet Info */}
+          <Animated.View entering={FadeInDown.delay(200).duration(600)}>
+            <BlurView
+              intensity={80}
+              tint={isDark ? 'dark' : 'light'}
+              style={[styles.connectedCard, { borderColor: theme.border }]}
+            >
+              <View style={styles.connectedHeader}>
+                <Text style={[styles.connectedTitle, { color: theme.text }]}>
+                  Connected Wallet
                 </Text>
-                <Text style={[styles.connectDescription, { color: theme.inactive }]}>
-                  Link your existing Algorand wallet to participate in savings circles
+                <View style={[styles.statusIndicator, { backgroundColor: theme.success }]} />
+              </View>
+              <View style={styles.addressContainer}>
+                <Text style={[styles.walletAddress, { color: theme.text }]}>
+                  {formatWalletAddress(user.walletAddress)}
                 </Text>
-                <Pressable
-                  style={[styles.connectButton, { backgroundColor: theme.primary }]}
-                  onPress={() => setConnectedWallet('ALGO123456789ABCDEFG')}
-                >
-                  <Text style={styles.connectButtonText}>Connect Wallet</Text>
+                <Pressable style={styles.copyButton}>
+                  <LinkIcon size={16} color={theme.primary} />
                 </Pressable>
-              </BlurView>
-            </Animated.View>
-          ) : (
-            <Animated.View entering={FadeInDown.delay(200).duration(600)}>
-              <BlurView
-                intensity={80}
-                tint={isDark ? 'dark' : 'light'}
-                style={[styles.connectedCard, { borderColor: theme.border }]}
-              >
-                <View style={styles.connectedHeader}>
-                  <Text style={[styles.connectedTitle, { color: theme.text }]}>
-                    Connected Wallet
-                  </Text>
-                  <View style={[styles.statusIndicator, { backgroundColor: theme.success }]} />
-                </View>
-                <View style={styles.addressContainer}>
-                  <Text style={[styles.walletAddress, { color: theme.text }]}>
-                    {formatWalletAddress(connectedWallet)}
-                  </Text>
-                  <Pressable style={styles.copyButton}>
-                    <LinkIcon size={16} color={theme.primary} />
-                  </Pressable>
-                </View>
-              </BlurView>
-            </Animated.View>
-          )}
+              </View>
+            </BlurView>
+          </Animated.View>
 
           {/* Transactions */}
           <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.transactionsContainer}>
@@ -132,6 +239,32 @@ export default function WalletScreen() {
     </View>
   );
 }
+
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  theme: any;
+  isDark: boolean;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, theme, isDark }) => {
+  return (
+    <BlurView
+      intensity={80}
+      tint={isDark ? 'dark' : 'light'}
+      style={[styles.featureCard, { borderColor: theme.border }]}
+    >
+      <View style={styles.featureIconContainer}>
+        {icon}
+      </View>
+      <Text style={[styles.featureTitle, { color: theme.text }]}>{title}</Text>
+      <Text style={[styles.featureDescription, { color: theme.inactive }]}>
+        {description}
+      </Text>
+    </BlurView>
+  );
+};
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -164,6 +297,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
   header: {
     paddingHorizontal: 24,
     paddingVertical: 16,
@@ -172,6 +309,125 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'Inter-Bold',
   },
+  
+  // Wallet Not Connected Styles
+  heroSection: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  walletIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 16,
+  },
+  
+  featuresSection: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  featureCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  featureIconContainer: {
+    marginBottom: 12,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 8,
+  },
+  featureDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+  },
+  
+  connectSection: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  connectCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: 24,
+    alignItems: 'center',
+  },
+  connectTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  connectDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  connectButton: {
+    width: '100%',
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  connectButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  supportedWallets: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+  },
+  
+  securityNotice: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  securityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  securityTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  securityText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 18,
+  },
+  
+  // Connected Wallet Styles
   balanceCard: {
     marginHorizontal: 24,
     borderRadius: 24,
@@ -222,40 +478,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: 'white',
   },
-  connectCard: {
-    marginHorizontal: 24,
-    marginTop: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    overflow: 'hidden',
-    padding: 24,
-    alignItems: 'center',
-  },
-  connectTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  connectDescription: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  connectButton: {
-    width: '100%',
-    height: 56,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  connectButtonText: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: 'white',
-  },
+  
   connectedCard: {
     marginHorizontal: 24,
     marginTop: 24,
@@ -291,6 +514,7 @@ const styles = StyleSheet.create({
   copyButton: {
     padding: 8,
   },
+  
   transactionsContainer: {
     marginTop: 24,
     marginBottom: 100,
