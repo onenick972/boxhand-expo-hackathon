@@ -5,6 +5,8 @@ export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
 // Algorand configuration
 export const ALGOD_TOKEN = process.env.EXPO_PUBLIC_ALGOD_TOKEN ?? '';
 export const ALGOD_SERVER = process.env.EXPO_PUBLIC_ALGOD_SERVER ?? '';
+export const ALGOD_index_SERVER = process.env.EXPO_PUBLIC_ALGOD_INDEX_SERVER ?? '';
+
 export const ALGOD_PORT = process.env.EXPO_PUBLIC_ALGOD_PORT ?? '';
 
 // Validate environment variables at startup
