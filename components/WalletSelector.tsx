@@ -8,7 +8,7 @@ interface WalletSelectorProps {
   onClose: () => void;
 }
 
-export default function WalletSelector({ visible, onSelect, onClose }: WalletSelectorProps) {
+const WalletSelector:  React.FC<WalletSelectorProps> = ({ visible, onSelect, onClose })=>{
   const wallets = [
     { id: 'pera', name: 'Pera Wallet' },
     { id: 'myalgo', name: 'MyAlgo Wallet' },
