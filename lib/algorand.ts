@@ -1,25 +1,32 @@
+import {
+  AlgodClient,
+  IndexerClient,
+  TransactionSigner,
+  encodeUnsignedTransaction,
+  decodeSignedTransaction,
+  makePaymentTxnWithSuggestedParamsFromObject,
+  OnApplicationComplete,
+  LogicSigAccount,
+  waitForConfirmation as waitTxConfirmation,
+} from 'algosdk';
 
-import algosdk from 'algosdk';
 import { PeraWalletConnect } from '@perawallet/connect';
 import MyAlgoConnect from '@randlabs/myalgo-connect';
 import { WalletConnectModal } from '@walletconnect/modal';
 import { createWalletClient } from '@walletconnect/core';
 
-//Initialize Algo Client
-const algodClient = new algosdk.Algodv2(process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
+const algodClient = new AlgodClient(process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
   process.env.EXPO_PUBLIC_ALGOD_SERVER || '',
   process.env.EXPO_PUBLIC_ALGOD_PORT || '');
 
-//Initialize Algo Indexer
-const indexerClient = new algosdk.Indexer( process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
+const indexerClient = new IndexerClient(process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
   process.env.EXPO_PUBLIC_ALGOD_INDEX_SERVER || '',
   process.env.EXPO_PUBLIC_ALGOD_PORT || '');
 
 const peraWallet = new PeraWalletConnect();
 const myAlgoWallet = new MyAlgoConnect();
-
 const wcModal = new WalletConnectModal({
-  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // REQUIRED
+  projectId: 'YOUR_PROJECT_ID', // Replace this
   chains: ['algorand:testnet'],
   metadata: {
     name: 'BoxHand',
@@ -47,7 +54,6 @@ export async function connectWallet(wallet: typeof activeWallet): Promise<string
     return connectedAccounts[0];
   }
 
-  // Defly, Exodus, Lute
   const session = await wcModal.connect();
   const address = session.namespaces.algorand.accounts[0].split(':')[2];
   connectedAccounts = [address];
@@ -57,8 +63,7 @@ export async function connectWallet(wallet: typeof activeWallet): Promise<string
 export function disconnectWallet() {
   if (activeWallet === 'pera') peraWallet.disconnect();
   if (activeWallet === 'myalgo') myAlgoWallet.disconnect?.();
-  if (activeWallet === 'defly' || activeWallet === 'exodus' || activeWallet === 'lute') wcModal.disconnect();
-
+  if (['defly', 'exodus', 'lute'].includes(activeWallet!)) wcModal.disconnect();
   connectedAccounts = [];
   activeWallet = null;
 }
@@ -73,18 +78,16 @@ export async function getTransactions(address: string): Promise<any[]> {
   return txns.transactions;
 }
 
-export async function sendAlgo(from: string, to: string, amountAlgo: number) {
+export async function sendAlgo(from: string, to: string, amountAlgo: number): Promise<string> {
   const suggestedParams = await algodClient.getTransactionParams().do();
-  const amount = Math.round(amountAlgo * 1e6);
-
-  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+  const txn = makePaymentTxnWithSuggestedParamsFromObject({
     from,
     to,
-    amount,
+    amount: Math.round(amountAlgo * 1e6),
     suggestedParams,
   });
 
-  let signedTxns;
+  let signedTxns: Uint8Array[];
 
   if (activeWallet === 'pera') {
     signedTxns = await peraWallet.signTransaction([{ txn, signers: [from] }]);
@@ -93,7 +96,7 @@ export async function sendAlgo(from: string, to: string, amountAlgo: number) {
     signedTxns = [signed.blob];
   } else {
     const wcClient = createWalletClient({ core: wcModal.core });
-    const encodedTxn = Buffer.from(algosdk.encodeUnsignedTransaction(txn)).toString('base64');
+    const encodedTxn = Buffer.from(encodeUnsignedTransaction(txn)).toString('base64');
     const result = await wcClient.request({
       topic: wcModal.session.topic,
       chainId: 'algorand:testnet',
@@ -106,33 +109,23 @@ export async function sendAlgo(from: string, to: string, amountAlgo: number) {
   }
 
   const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
-  await waitForConfirmation(txId);
+  await waitTxConfirmation(algodClient, txId, 3);
   return txId;
 }
 
-export async function waitForConfirmation(txId: string): Promise<void> {
-  let lastRound = (await algodClient.status().do())['last-round'];
-  while (true) {
-    const info = await algodClient.pendingTransactionInformation(txId).do();
-    if (info['confirmed-round']) return;
-    lastRound++;
-    await algodClient.statusAfterBlock(lastRound).do();
-  }
-}
-
-export async function compileTeal(tealSource: string): Promise<algosdk.LogicSigAccount> {
+export async function compileTeal(tealSource: string): Promise<LogicSigAccount> {
   const compileResp = await algodClient.compile(tealSource).do();
   const programBytes = new Uint8Array(Buffer.from(compileResp.result, 'base64'));
-  return new algosdk.LogicSigAccount(programBytes);
+  return new LogicSigAccount(programBytes);
 }
 
 export async function withdrawFromCircleContract(
-  logicSig: algosdk.LogicSigAccount,
+  logicSig: LogicSigAccount,
   to: string,
   amountAlgo: number
 ) {
   const suggestedParams = await algodClient.getTransactionParams().do();
-  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+  const txn = makePaymentTxnWithSuggestedParamsFromObject({
     from: logicSig.address(),
     to,
     amount: Math.round(amountAlgo * 1e6),
@@ -140,6 +133,6 @@ export async function withdrawFromCircleContract(
   });
 
   const { txId } = await algodClient.sendRawTransaction(txn.signTxn(logicSig.sk!)).do();
-  await waitForConfirmation(txId);
+  await waitTxConfirmation(algodClient, txId, 3);
   return txId;
 }
