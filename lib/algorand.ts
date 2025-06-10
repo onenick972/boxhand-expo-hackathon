@@ -1,78 +1,145 @@
+
 import algosdk from 'algosdk';
-import { supabase } from './supabase';
+import { PeraWalletConnect } from '@perawallet/connect';
+import MyAlgoConnect from '@randlabs/myalgo-connect';
+import { WalletConnectModal } from '@walletconnect/modal';
+import { createWalletClient } from '@walletconnect/core';
 
-// Initialize Algorand client
-const algodClient = new algosdk.Algodv2(
-  process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
+//Initialize Algo Client
+const algodClient = new algosdk.Algodv2(process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
   process.env.EXPO_PUBLIC_ALGOD_SERVER || '',
-  process.env.EXPO_PUBLIC_ALGOD_PORT || ''
-);
+  process.env.EXPO_PUBLIC_ALGOD_PORT || '');
 
-// Wallet connection types
-export type WalletType = 'pera' | 'myalgo';
+//Initialize Algo Indexer
+const indexerClient = new algosdk.Indexer( process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
+  process.env.EXPO_PUBLIC_ALGOD_INDEX_SERVER || '',
+  process.env.EXPO_PUBLIC_ALGOD_PORT || '');
 
-// Connect wallet and update user profile
-// Connect to wallet and return address
-export async function connectWallet(type: WalletType): Promise<string> {
-  try {
-    let walletAddress: string;
-    
-    if (type === 'pera') {
-      // In production, integrate with PeraWallet SDK
-      const mockAccount = algosdk.generateAccount();
-      walletAddress = mockAccount.addr;
-    } else {
-      // In production, integrate with MyAlgo SDK
-      const mockAccount = algosdk.generateAccount();
-      walletAddress = mockAccount.addr;
-    }
-    
-    // Verify address is valid
-    if (!isValidAlgorandAddress(walletAddress)) {
-      throw new Error('Invalid wallet address');
-    }
-    
-    // Update user profile with wallet address
-    const { error } = await supabase.auth.updateUser({
-      data: { wallet_address: walletAddress }
+const peraWallet = new PeraWalletConnect();
+const myAlgoWallet = new MyAlgoConnect();
+
+const wcModal = new WalletConnectModal({
+  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // REQUIRED
+  chains: ['algorand:testnet'],
+  metadata: {
+    name: 'BoxHand',
+    description: 'Micro-savings Circle App',
+    url: 'https://boxhand.app',
+    icons: ['https://yourdomain.com/icon.png'],
+  },
+});
+
+let activeWallet: 'pera' | 'myalgo' | 'defly' | 'exodus' | 'lute' | null = null;
+let connectedAccounts: string[] = [];
+
+export async function connectWallet(wallet: typeof activeWallet): Promise<string> {
+  activeWallet = wallet;
+
+  if (wallet === 'pera') {
+    connectedAccounts = await peraWallet.connect();
+    peraWallet.connector?.on('disconnect', disconnectWallet);
+    return connectedAccounts[0];
+  }
+
+  if (wallet === 'myalgo') {
+    const accounts = await myAlgoWallet.connect();
+    connectedAccounts = accounts.map(acc => acc.address);
+    return connectedAccounts[0];
+  }
+
+  // Defly, Exodus, Lute
+  const session = await wcModal.connect();
+  const address = session.namespaces.algorand.accounts[0].split(':')[2];
+  connectedAccounts = [address];
+  return address;
+}
+
+export function disconnectWallet() {
+  if (activeWallet === 'pera') peraWallet.disconnect();
+  if (activeWallet === 'myalgo') myAlgoWallet.disconnect?.();
+  if (activeWallet === 'defly' || activeWallet === 'exodus' || activeWallet === 'lute') wcModal.disconnect();
+
+  connectedAccounts = [];
+  activeWallet = null;
+}
+
+export async function getBalance(address: string): Promise<number> {
+  const info = await algodClient.accountInformation(address).do();
+  return info.amount / 1e6;
+}
+
+export async function getTransactions(address: string): Promise<any[]> {
+  const txns = await indexerClient.searchForTransactions().address(address).limit(10).do();
+  return txns.transactions;
+}
+
+export async function sendAlgo(from: string, to: string, amountAlgo: number) {
+  const suggestedParams = await algodClient.getTransactionParams().do();
+  const amount = Math.round(amountAlgo * 1e6);
+
+  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from,
+    to,
+    amount,
+    suggestedParams,
+  });
+
+  let signedTxns;
+
+  if (activeWallet === 'pera') {
+    signedTxns = await peraWallet.signTransaction([{ txn, signers: [from] }]);
+  } else if (activeWallet === 'myalgo') {
+    const signed = await myAlgoWallet.signTransaction(txn.toByte());
+    signedTxns = [signed.blob];
+  } else {
+    const wcClient = createWalletClient({ core: wcModal.core });
+    const encodedTxn = Buffer.from(algosdk.encodeUnsignedTransaction(txn)).toString('base64');
+    const result = await wcClient.request({
+      topic: wcModal.session.topic,
+      chainId: 'algorand:testnet',
+      request: {
+        method: 'algorand_signTxn',
+        params: [[{ txn: encodedTxn }]],
+      },
     });
+    signedTxns = [Buffer.from(result[0], 'base64')];
+  }
 
-    if (error) throw error;
-    
-    return walletAddress;
-  } catch (error) {
-    console.error('Failed to connect wallet:', error);
-    throw error;
+  const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
+  await waitForConfirmation(txId);
+  return txId;
+}
+
+export async function waitForConfirmation(txId: string): Promise<void> {
+  let lastRound = (await algodClient.status().do())['last-round'];
+  while (true) {
+    const info = await algodClient.pendingTransactionInformation(txId).do();
+    if (info['confirmed-round']) return;
+    lastRound++;
+    await algodClient.statusAfterBlock(lastRound).do();
   }
 }
 
-export async function deployCircleContract(
-  name: string,
-  contributionAmount: number,
-  frequency: string,
-  memberAddresses: string[]
+export async function compileTeal(tealSource: string): Promise<algosdk.LogicSigAccount> {
+  const compileResp = await algodClient.compile(tealSource).do();
+  const programBytes = new Uint8Array(Buffer.from(compileResp.result, 'base64'));
+  return new algosdk.LogicSigAccount(programBytes);
+}
+
+export async function withdrawFromCircleContract(
+  logicSig: algosdk.LogicSigAccount,
+  to: string,
+  amountAlgo: number
 ) {
-  try {
-    // This is a simplified version. In production, you'd need to:
-    // 1. Create and deploy actual smart contract
-    // 2. Handle contract initialization
-    // 3. Set up proper error handling
-    // 4. Implement proper transaction signing
-    
-    // For demo, we'll just return a mock contract address
-    const mockContractAddress = `ALGO${Math.random().toString(36).substring(2, 15)}`;
-    return mockContractAddress;
-  } catch (error) {
-    console.error('Failed to deploy circle contract:', error);
-    throw error;
-  }
-}
+  const suggestedParams = await algodClient.getTransactionParams().do();
+  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: logicSig.address(),
+    to,
+    amount: Math.round(amountAlgo * 1e6),
+    suggestedParams,
+  });
 
-// Verify if an address is valid
-export function isValidAlgorandAddress(address: string): boolean {
-  try {
-    return algosdk.isValidAddress(address);
-  } catch {
-    return false;
-  }
+  const { txId } = await algodClient.sendRawTransaction(txn.signTxn(logicSig.sk!)).do();
+  await waitForConfirmation(txId);
+  return txId;
 }
