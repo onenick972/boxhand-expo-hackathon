@@ -9,6 +9,8 @@ interface WalletSelectorProps {
 }
 
 const WalletSelector:  React.FC<WalletSelectorProps> = ({ visible, onSelect, onClose })=>{
+  const { theme } = useTheme();
+  
   const wallets = [
     { id: 'pera', name: 'Pera Wallet' },
     { id: 'myalgo', name: 'MyAlgo Wallet' },
