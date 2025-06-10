@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { ArrowUpRight, ArrowDownRight, Wallet, ArrowDownLeft, Link as LinkIcon, Shield, Zap, Users } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import TransactionList from '@/components/TransactionList';
-import WalletSelector from '@/components/WalletSelector';
+import WalletSelector from '../../components/WalletSelector';
 import { connectWallet, getBalance, getTransactions, sendGroupTransactions } from '@/lib/algorand';
 
 export default function WalletScreen() {
