@@ -136,3 +136,57 @@ export async function withdrawFromCircleContract(
   await waitTxConfirmation(algodClient, txId, 3);
   return txId;
 }
+
+export async function sendGroupTransactions(
+  transactions: {
+    from: string;
+    to: string;
+    amountAlgo: number;
+  }[]
+): Promise<string> {
+  const suggestedParams = await algodClient.getTransactionParams().do();
+
+  // Build unsigned txns
+  const unsignedTxns = transactions.map((tx) =>
+    makePaymentTxnWithSuggestedParamsFromObject({
+      from: tx.from,
+      to: tx.to,
+      amount: Math.round(tx.amountAlgo * 1e6),
+      suggestedParams,
+    })
+  );
+
+  // Group them atomically
+  algosdk.assignGroupID(unsignedTxns);
+
+  let signedTxns: Uint8Array[];
+
+  if (activeWallet === 'pera') {
+    signedTxns = await peraWallet.signTransaction(
+      unsignedTxns.map((txn) => ({ txn, signers: [txn.from] }))
+    );
+  } else if (activeWallet === 'myalgo') {
+    const blobs = await myAlgoWallet.signTransaction(unsignedTxns.map((tx) => tx.toByte()));
+    signedTxns = blobs.map((b: any) => b.blob);
+  } else {
+    const wcClient = createWalletClient({ core: wcModal.core });
+    const encoded = unsignedTxns.map((tx) => ({
+      txn: Buffer.from(encodeUnsignedTransaction(tx)).toString('base64'),
+    }));
+
+    const result = await wcClient.request({
+      topic: wcModal.session.topic,
+      chainId: 'algorand:testnet',
+      request: {
+        method: 'algorand_signTxn',
+        params: [encoded],
+      },
+    });
+
+    signedTxns = result.map((r: string) => Buffer.from(r, 'base64'));
+  }
+
+  const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
+  await waitTxConfirmation(algodClient, txId, 3);
+  return txId;
+}
