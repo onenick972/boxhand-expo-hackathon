@@ -19,8 +19,7 @@
     "@react-navigation/bottom-tabs": "^7.3.14",
     "@react-navigation/native": "^7.1.10",
     "@supabase/supabase-js": "^2.39.7",
-    "@walletconnect/core": "^2.21.4",
-    "@walletconnect/modal": "^2.7.2",
+
     "algosdk": "^2.11.1",
     "expo": "^53.0.9",
     "expo-blur": "~14.1.4",
