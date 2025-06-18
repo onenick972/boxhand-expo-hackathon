@@ -1,6 +1,4 @@
-import {
-  AlgodClient,
-  IndexerClient,
+import algosdk, {
   TransactionSigner,
   encodeUnsignedTransaction,
   decodeSignedTransaction,
@@ -8,38 +6,46 @@ import {
   OnApplicationComplete,
   LogicSigAccount,
   waitForConfirmation as waitTxConfirmation,
+  Algodv2 as AlgodClient,
+  Indexer as IndexerClient,
+  assignGroupID,
 } from 'algosdk';
 
 import { PeraWalletConnect } from '@perawallet/connect';
 import MyAlgoConnect from '@randlabs/myalgo-connect';
+
 import { WalletConnectModal } from '@walletconnect/modal';
-import { createWalletClient } from '@walletconnect/core';
+import SignClient from '@walletconnect/sign-client';
+import { Buffer } from 'buffer';
 
-const algodClient = new AlgodClient(process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
+const algodClient = new AlgodClient(
+  process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
   process.env.EXPO_PUBLIC_ALGOD_SERVER || '',
-  process.env.EXPO_PUBLIC_ALGOD_PORT || '');
+  process.env.EXPO_PUBLIC_ALGOD_PORT || ''
+);
 
-const indexerClient = new IndexerClient(process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
+const indexerClient = new IndexerClient(
+  process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
   process.env.EXPO_PUBLIC_ALGOD_INDEX_SERVER || '',
-  process.env.EXPO_PUBLIC_ALGOD_PORT || '');
+  process.env.EXPO_PUBLIC_ALGOD_PORT || ''
+);
 
 const peraWallet = new PeraWalletConnect();
 const myAlgoWallet = new MyAlgoConnect();
+
 const wcModal = new WalletConnectModal({
-  projectId: 'YOUR_PROJECT_ID', // Replace this
+  projectId: 'd6bfc6ec7875b2b61493702baad26398', // Replace with your WalletConnect Cloud projectId
   chains: ['algorand:testnet'],
-  metadata: {
-    name: 'BoxHand',
-    description: 'Micro-savings Circle App',
-    url: 'https://boxhand.app',
-    icons: ['https://yourdomain.com/icon.png'],
-  },
 });
 
 let activeWallet: 'pera' | 'myalgo' | 'defly' | 'exodus' | 'lute' | null = null;
 let connectedAccounts: string[] = [];
+let wcSession: any = null;
+let wcClient: SignClient | null = null;
 
-export async function connectWallet(wallet: typeof activeWallet): Promise<string> {
+export async function connectWallet(
+  wallet: typeof activeWallet
+): Promise<string> {
   activeWallet = wallet;
 
   if (wallet === 'pera') {
@@ -50,20 +56,45 @@ export async function connectWallet(wallet: typeof activeWallet): Promise<string
 
   if (wallet === 'myalgo') {
     const accounts = await myAlgoWallet.connect();
-    connectedAccounts = accounts.map(acc => acc.address);
+    connectedAccounts = accounts.map((acc) => acc.address);
     return connectedAccounts[0];
   }
 
-  const session = await wcModal.connect();
-  const address = session.namespaces.algorand.accounts[0].split(':')[2];
+  // WalletConnect v2
+  if (!wcClient) {
+    wcClient = await SignClient.init({
+      projectId: 'd6bfc6ec7875b2b61493702baad26398', // Replace with your WalletConnect Cloud projectId
+      metadata: {
+        name: 'BoxHand',
+        description: 'Micro-savings Circle App',
+        url: 'https://boxhand.app',
+        icons: ['https://yourdomain.com/icon.png'],
+      },
+    });
+  }
+
+  await wcModal.openModal();
+  const sessions = wcClient.session.values;
+  wcSession = sessions.length > 0 ? sessions[0] : null;
+  if (!wcSession) throw new Error('No WalletConnect session established');
+  const address = wcSession.namespaces.algorand.accounts[0].split(':')[2];
   connectedAccounts = [address];
   return address;
 }
 
 export function disconnectWallet() {
   if (activeWallet === 'pera') peraWallet.disconnect();
-  if (activeWallet === 'myalgo') myAlgoWallet.disconnect?.();
-  if (['defly', 'exodus', 'lute'].includes(activeWallet!)) wcModal.disconnect();
+  if (activeWallet === 'myalgo') {
+    // No disconnect method for MyAlgoConnect, just clear state
+  }
+  if (['defly', 'exodus', 'lute'].includes(activeWallet!)) {
+    if (wcSession && wcClient)
+      wcClient.disconnect({
+        topic: wcSession.topic,
+        reason: { code: 6000, message: 'User disconnected' },
+      });
+    wcSession = null;
+  }
   connectedAccounts = [];
   activeWallet = null;
 }
@@ -74,11 +105,19 @@ export async function getBalance(address: string): Promise<number> {
 }
 
 export async function getTransactions(address: string): Promise<any[]> {
-  const txns = await indexerClient.searchForTransactions().address(address).limit(10).do();
+  const txns = await indexerClient
+    .searchForTransactions()
+    .address(address)
+    .limit(10)
+    .do();
   return txns.transactions;
 }
 
-export async function sendAlgo(from: string, to: string, amountAlgo: number): Promise<string> {
+export async function sendAlgo(
+  from: string,
+  to: string,
+  amountAlgo: number
+): Promise<string> {
   const suggestedParams = await algodClient.getTransactionParams().do();
   const txn = makePaymentTxnWithSuggestedParamsFromObject({
     from,
@@ -90,22 +129,26 @@ export async function sendAlgo(from: string, to: string, amountAlgo: number): Pr
   let signedTxns: Uint8Array[];
 
   if (activeWallet === 'pera') {
-    signedTxns = await peraWallet.signTransaction([{ txn, signers: [from] }]);
+    signedTxns = await peraWallet.signTransaction([[{ txn, signers: [from] }]]);
   } else if (activeWallet === 'myalgo') {
     const signed = await myAlgoWallet.signTransaction(txn.toByte());
     signedTxns = [signed.blob];
   } else {
-    const wcClient = createWalletClient({ core: wcModal.core });
-    const encodedTxn = Buffer.from(encodeUnsignedTransaction(txn)).toString('base64');
+    // WalletConnect v2
+    if (!wcSession || !wcClient) throw new Error('No WalletConnect session');
+    const encodedTxn = Buffer.from(encodeUnsignedTransaction(txn)).toString(
+      'base64'
+    );
     const result = await wcClient.request({
-      topic: wcModal.session.topic,
+      topic: wcSession.topic,
       chainId: 'algorand:testnet',
       request: {
-        method: 'algorand_signTxn',
+        method: 'algo_signTxn',
         params: [[{ txn: encodedTxn }]],
       },
     });
-    signedTxns = [Buffer.from(result[0], 'base64')];
+    const resultArr = result as string[];
+    signedTxns = [Buffer.from(resultArr[0], 'base64')];
   }
 
   const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
@@ -113,9 +156,13 @@ export async function sendAlgo(from: string, to: string, amountAlgo: number): Pr
   return txId;
 }
 
-export async function compileTeal(tealSource: string): Promise<LogicSigAccount> {
+export async function compileTeal(
+  tealSource: string
+): Promise<LogicSigAccount> {
   const compileResp = await algodClient.compile(tealSource).do();
-  const programBytes = new Uint8Array(Buffer.from(compileResp.result, 'base64'));
+  const programBytes = new Uint8Array(
+    Buffer.from(compileResp.result, 'base64')
+  );
   return new LogicSigAccount(programBytes);
 }
 
@@ -132,7 +179,8 @@ export async function withdrawFromCircleContract(
     suggestedParams,
   });
 
-  const { txId } = await algodClient.sendRawTransaction(txn.signTxn(logicSig.sk!)).do();
+  const signedTxn = algosdk.signLogicSigTransactionObject(txn, logicSig).blob;
+  const { txId } = await algodClient.sendRawTransaction(signedTxn).do();
   await waitTxConfirmation(algodClient, txId, 3);
   return txId;
 }
@@ -157,33 +205,43 @@ export async function sendGroupTransactions(
   );
 
   // Group them atomically
-  algosdk.assignGroupID(unsignedTxns);
+  assignGroupID(unsignedTxns);
 
   let signedTxns: Uint8Array[];
 
   if (activeWallet === 'pera') {
-    signedTxns = await peraWallet.signTransaction(
-      unsignedTxns.map((txn) => ({ txn, signers: [txn.from] }))
-    );
+    signedTxns = await peraWallet.signTransaction([
+      unsignedTxns.map((txn) => ({
+        txn, // pass the Transaction object directly
+        signers: [
+          typeof txn.from === 'string' ? txn.from : txn.from.toString(),
+        ],
+      })),
+    ]);
   } else if (activeWallet === 'myalgo') {
-    const blobs = await myAlgoWallet.signTransaction(unsignedTxns.map((tx) => tx.toByte()));
+    const blobs = await myAlgoWallet.signTransaction(
+      unsignedTxns.map((tx) => tx.toByte())
+    );
     signedTxns = blobs.map((b: any) => b.blob);
   } else {
-    const wcClient = createWalletClient({ core: wcModal.core });
+    // WalletConnect v2
+    if (!wcSession || !wcClient) throw new Error('No WalletConnect session');
     const encoded = unsignedTxns.map((tx) => ({
       txn: Buffer.from(encodeUnsignedTransaction(tx)).toString('base64'),
     }));
 
     const result = await wcClient.request({
-      topic: wcModal.session.topic,
+      topic: wcSession.topic,
       chainId: 'algorand:testnet',
       request: {
-        method: 'algorand_signTxn',
+        method: 'algo_signTxn',
         params: [encoded],
       },
     });
 
-    signedTxns = result.map((r: string) => Buffer.from(r, 'base64'));
+    signedTxns = (result as string[]).map((r: string) =>
+      Buffer.from(r, 'base64')
+    );
   }
 
   const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
