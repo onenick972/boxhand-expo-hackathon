@@ -52,7 +52,11 @@ interface Transaction {
   txHash: string;
 }
 
-const TransactionList: React.FC = () => {
+interface TransactionListProps {
+  transactions?: any[];
+}
+
+const TransactionList: React.FC<TransactionListProps> = ({ transactions = mockTransactions }) => {
   const { theme } = useTheme();
   
   const formatDate = (dateString: string) => {
@@ -153,7 +157,7 @@ const TransactionList: React.FC = () => {
   
   return (
     <FlatList
-      data={mockTransactions}
+      data={transactions}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
       contentContainerStyle={styles.container}

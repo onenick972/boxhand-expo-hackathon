@@ -248,3 +248,22 @@ export async function sendGroupTransactions(
   await waitTxConfirmation(algodClient, txId, 3);
   return txId;
 }
+
+export async function deployCircleContract(
+  name: string,
+  contributionAmount: number,
+  frequency: string,
+  memberAddresses: string[]
+): Promise<string> {
+  // Mock implementation for now
+  // In a real implementation, this would deploy a smart contract
+  return `CONTRACT_${Date.now()}`;
+}
+
+export function isValidAlgorandAddress(address: string): boolean {
+  try {
+    return algosdk.isValidAddress(address);
+  } catch {
+    return false;
+  }
+}

@@ -1,27 +1,22 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch,Alert  } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { connectWallet } from '@/lib/algorand';
-import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight ,WalletCards} from 'lucide-react-native';
+import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight, WalletCards } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
   const { user, signOut, connectWallet: updateWallet } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleConnectWallet = async () => {
     try {
       setIsLoading(true);
       const walletAddress = await connectWallet('pera');
 
-      
-      // Update local state
-      if (user) {
-        setUser({ ...user, walletAddress });
-      }
-     
       // Update user profile with wallet address
       await updateWallet(walletAddress);
 
