@@ -57,14 +57,40 @@ To use the BoxHand app:
 ## Development Setup
 
 1. Clone the repository
-2. Install dependencies:
+2. Copy environment variables:
+   ```
+   cp .env.example .env.local
+   ```
+3. Fill in your environment variables in `.env.local`
+4. Install dependencies:
    ```
    npm install
    ```
-3. Start the development server:
+5. Start the development server:
    ```
    npm run dev
    ```
+
+## Environment Setup
+
+### Required Environment Variables
+
+1. **Supabase**: Create a project at [supabase.com](https://supabase.com)
+   - `EXPO_PUBLIC_SUPABASE_URL`: Your project URL
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Your project's anon/public key
+
+2. **WalletConnect**: Create a project at [cloud.walletconnect.com](https://cloud.walletconnect.com)
+   - `EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID`: Your project ID
+
+3. **Algorand**: Configure blockchain connection
+   - For TestNet (development): Use the provided TestNet endpoints
+   - For MainNet (production): Use MainNet endpoints
+
+### Environment Files
+
+- `.env.example`: Template with all required variables
+- `.env.local`: Your local development configuration (not committed)
+- Production: Set environment variables in your hosting platform
 
 ## Building for Production
 

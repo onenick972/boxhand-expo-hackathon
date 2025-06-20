@@ -17,6 +17,7 @@ import MyAlgoConnect from '@randlabs/myalgo-connect';
 import { WalletConnectModal } from '@walletconnect/modal';
 import SignClient from '@walletconnect/sign-client';
 import { Buffer } from 'buffer';
+import { WALLETCONNECT_PROJECT_ID, APP_NAME, APP_DESCRIPTION, APP_URL, APP_ICON } from '@/constants/Config';
 
 const algodClient = new AlgodClient(
   process.env.EXPO_PUBLIC_ALGOD_TOKEN || '',
@@ -34,7 +35,7 @@ const peraWallet = new PeraWalletConnect();
 const myAlgoWallet = new MyAlgoConnect();
 
 const wcModal = new WalletConnectModal({
-  projectId: 'd6bfc6ec7875b2b61493702baad26398', // Replace with your WalletConnect Cloud projectId
+  projectId: WALLETCONNECT_PROJECT_ID,
   chains: ['algorand:testnet'],
 });
 
@@ -63,12 +64,12 @@ export async function connectWallet(
   // WalletConnect v2
   if (!wcClient) {
     wcClient = await SignClient.init({
-      projectId: 'd6bfc6ec7875b2b61493702baad26398', // Replace with your WalletConnect Cloud projectId
+      projectId: WALLETCONNECT_PROJECT_ID,
       metadata: {
-        name: 'BoxHand',
-        description: 'Micro-savings Circle App',
-        url: 'https://boxhand.app',
-        icons: ['https://yourdomain.com/icon.png'],
+        name: APP_NAME,
+        description: APP_DESCRIPTION,
+        url: APP_URL,
+        icons: [APP_ICON],
       },
     });
   }
