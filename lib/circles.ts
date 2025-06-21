@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { deployCircleContract } from './algorand';
+import { deployCircleContract } from './walletHelper';
 
 export async function createCircle(
   name: string,
@@ -20,7 +20,7 @@ export async function createCircle(
           frequency,
           total_pool: 0,
           created_by: (await supabase.auth.getUser()).data.user?.id,
-        }
+        },
       ])
       .select()
       .single();
@@ -35,7 +35,7 @@ export async function createCircle(
           circle_id: circle.id,
           user_id: (await supabase.auth.getUser()).data.user?.id,
           role: 'admin',
-        }
+        },
       ]);
 
     if (memberError) throw memberError;
@@ -49,7 +49,7 @@ export async function createCircle(
     if (usersError) throw usersError;
 
     if (users && users.length > 0) {
-      const memberInserts = users.map(user => ({
+      const memberInserts = users.map((user) => ({
         circle_id: circle.id,
         user_id: user.id,
         role: 'member',

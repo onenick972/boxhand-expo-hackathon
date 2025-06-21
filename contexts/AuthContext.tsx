@@ -34,7 +34,9 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,13 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           router.replace('/(tabs)');
         });
       } else {
-        setIsLoading(false); 
+        setIsLoading(false);
         router.replace('/(auth)');
       }
     });
 
     // Handle auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
         setIsLoading(true);
@@ -73,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId) 
+        .eq('id', userId)
         .maybeSingle();
 
       if (error) throw error;
@@ -81,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         setUser(data);
       } else {
-        // No user profile found, sign out to trigger re-authentication 
+        // No user profile found, sign out to trigger re-authentication
         await supabase.auth.signOut();
         router.replace('/(auth)');
       }
@@ -95,13 +99,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data: { session, user }, error } = await supabase.auth.signInWithPassword({
+      const {
+        data: { session, user },
+        error,
+      } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-      
+
       if (session && user) {
         setSession(session);
         await fetchUser(user.id).then(() => {
@@ -119,7 +126,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      const { data: { user }, error } = await supabase.auth.signUp({
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -127,16 +137,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (user) {
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([
-            {
-              id: user.id,
-              email,
-              name,
-              trust_score: 50,
-            },
-          ]);
+        const { error: profileError } = await supabase.from('users').insert([
+          {
+            id: user.id,
+            email,
+            name,
+            trust_score: 50,
+          },
+        ]);
 
         if (profileError) throw profileError;
       }
@@ -165,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const connectWallet = async (walletAddress: string) => {
     if (!user) return;
-    
+
     try {
       const { error } = await supabase
         .from('users')
@@ -182,7 +190,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut, connectWallet }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        signIn,
+        signUp,
+        signOut,
+        connectWallet,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,30 +1,42 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch,Alert  } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Switch,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { connectWallet } from '@/lib/walletHelper';
+import {
+  User,
+  Moon,
+  Bell,
+  Shield,
+  Globe,
+  CircleHelp as HelpCircle,
+  LogOut,
+  ChevronRight,
+  WalletCards,
+} from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { connectWallet } from '@/lib/algorand';
-import { User, Moon, Bell, Shield, Globe, CircleHelp as HelpCircle, LogOut, ChevronRight ,WalletCards} from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
 
 export default function SettingsScreen() {
+  const [isLoading, setIsLoading] = useState(false);
   const { theme, isDark, toggleTheme } = useTheme();
-  const { user, signOut, connectWallet: updateWallet } = useAuth();
-  
+  const { user, signOut, connectWallet: updateWallet } = useAuth(); // <-- add setUser
+
   const handleConnectWallet = async () => {
     try {
       setIsLoading(true);
-      const walletAddress = await connectWallet('pera');
+      // const walletAddress = await connectWallet('myalgo');
 
-      
-      // Update local state
-      if (user) {
-        setUser({ ...user, walletAddress });
-      }
-     
-      // Update user profile with wallet address
-      await updateWallet(walletAddress);
-
+      // // Update user profile with wallet address
+      // await updateWallet(walletAddress);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       Alert.alert(
@@ -35,13 +47,15 @@ export default function SettingsScreen() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>Settings</Text>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>
+              Settings
+            </Text>
           </View>
 
           {/* Profile Section */}
@@ -50,7 +64,9 @@ export default function SettingsScreen() {
             tint={isDark ? 'dark' : 'light'}
             style={[styles.profileCard, { borderColor: theme.border }]}
           >
-            <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
+            <View
+              style={[styles.profileAvatar, { backgroundColor: theme.primary }]}
+            >
               <Text style={styles.profileInitial}>
                 {user?.name?.charAt(0) || 'U'}
               </Text>
@@ -72,9 +88,11 @@ export default function SettingsScreen() {
 
           {/* Settings Sections */}
           <View style={styles.settingsSection}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Appearance</Text>
-            
-            <SettingItem 
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Appearance
+            </Text>
+
+            <SettingItem
               icon={<Moon size={20} color={theme.text} />}
               title="Dark Mode"
               rightElement={
@@ -90,9 +108,11 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.settingsSection}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notifications</Text>
-            
-            <SettingItem 
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Notifications
+            </Text>
+
+            <SettingItem
               icon={<Bell size={20} color={theme.text} />}
               title="Push Notifications"
               rightElement={
@@ -104,8 +124,8 @@ export default function SettingsScreen() {
               }
               theme={theme}
             />
-            
-            <SettingItem 
+
+            <SettingItem
               icon={<Bell size={20} color={theme.text} />}
               title="Payment Reminders"
               rightElement={
@@ -120,9 +140,11 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.settingsSection}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Account & Security</Text>
-            
-            <SettingItem 
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Account & Security
+            </Text>
+
+            <SettingItem
               icon={<WalletCards size={20} color={theme.text} />}
               title="Connect Wallet"
               rightText={user?.walletAddress ? 'Connected' : 'Not Connected'}
@@ -130,8 +152,8 @@ export default function SettingsScreen() {
               showChevron
               theme={theme}
             />
-            
-            <SettingItem 
+
+            <SettingItem
               icon={<Shield size={20} color={theme.text} />}
               title="Security Settings"
               showChevron
@@ -140,17 +162,19 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.settingsSection}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>General</Text>
-            
-            <SettingItem 
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              General
+            </Text>
+
+            <SettingItem
               icon={<Globe size={20} color={theme.text} />}
               title="Language"
               rightText="English"
               showChevron
               theme={theme}
             />
-            
-            <SettingItem 
+
+            <SettingItem
               icon={<HelpCircle size={20} color={theme.text} />}
               title="Help & Support"
               showChevron
@@ -158,7 +182,7 @@ export default function SettingsScreen() {
             />
           </View>
 
-          <Pressable 
+          <Pressable
             style={[styles.logoutButton, { borderColor: theme.error }]}
             onPress={signOut}
           >
@@ -189,25 +213,27 @@ interface SettingItemProps {
   theme: any;
 }
 
-const SettingItem: React.FC<SettingItemProps> = ({ 
-  icon, 
-  title, 
-  rightElement, 
+const SettingItem: React.FC<SettingItemProps> = ({
+  icon,
+  title,
+  rightElement,
   onPress,
-  rightText, 
+  rightText,
   showChevron = false,
-  theme 
+  theme,
 }) => {
   return (
-    <Pressable 
+    <Pressable
       style={[styles.settingItem, { borderBottomColor: theme.border }]}
       onPress={onPress}
     >
       <View style={styles.settingLeft}>
         {icon}
-        <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.settingTitle, { color: theme.text }]}>
+          {title}
+        </Text>
       </View>
-      
+
       <View style={styles.settingRight}>
         {rightText && (
           <Text style={[styles.settingRightText, { color: theme.inactive }]}>

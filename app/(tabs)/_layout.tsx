@@ -3,7 +3,13 @@ import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Chrome as Home, UsersRound, WalletCards, ChartPie as PieChart, Settings } from 'lucide-react-native';
+import {
+  Chrome as Home,
+  UsersRound,
+  WalletCards,
+  ChartPie as PieChart,
+  Settings,
+} from 'lucide-react-native';
 
 export default function TabLayout() {
   const { theme, isDark } = useTheme();
@@ -17,7 +23,7 @@ export default function TabLayout() {
           backgroundColor: Platform.OS === 'ios' ? 'transparent' : theme.card,
           borderTopColor: theme.border,
         },
-        tabBarBackground: () => 
+        tabBarBackground: () =>
           Platform.OS === 'ios' ? (
             <BlurView
               tint={isDark ? 'dark' : 'light'}
@@ -41,28 +47,36 @@ export default function TabLayout() {
         name="circles"
         options={{
           title: 'Circles',
-          tabBarIcon: ({ color, size }) => <UsersRound color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <UsersRound color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
           title: 'Wallet',
-          tabBarIcon: ({ color, size }) => <WalletCards color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <WalletCards color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
           title: 'Analytics',
-          tabBarIcon: ({ color, size }) => <PieChart color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <PieChart color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Settings color={color} size={size} />
+          ),
         }}
       />
     </Tabs>

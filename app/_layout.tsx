@@ -43,7 +43,9 @@ export default function RootLayout() {
   );
 }
 
-function RootLayoutNav({ colorScheme }: { colorScheme: string | null }) {
+import type { ColorSchemeName } from 'react-native';
+
+function RootLayoutNav({ colorScheme }: { colorScheme: ColorSchemeName }) {
   const { session } = useAuth();
 
   return (
